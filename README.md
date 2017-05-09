@@ -1,6 +1,11 @@
 # Conway's Game of Life
 > Final evaluation for Advanced programming class, using MP and PGM images.  [Conway's Game of Life](https://en.wikipedia.org/wiki/Conway's_Game_of_Life).
 
+**Sample**
+
+Generated GIF, using samples/bichitos.txt file, a 500x500 initial state
+![](https://media.giphy.com/media/3og0IKyyJbmD8Gi84o/giphy.gif)
+
 ## Description
 
 The game is played on its own, with cells arranged in a matrix. The cells can be alive or dead. At every iteration of the game, the cells can remain as they are, die or be born, following this rules.
