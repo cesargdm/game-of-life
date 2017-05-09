@@ -5,7 +5,7 @@
 
 Generated GIF, using samples/bichitos.txt file, a 500x500 initial state
 
-![Bichitos historical](https://media.giphy.com/media/3og0IKyyJbmD8Gi84o/giphy.gif "Bichitos historical")
+![Game of Life](http://i.imgur.com/ZJs1SvP.gif)
 
 ## Description
 
