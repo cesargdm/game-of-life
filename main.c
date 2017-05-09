@@ -1,31 +1,4 @@
-/*
-GAME OF LIFE
-
-César Guadarrama Cantú
-cesargdm@icloud.com
-A01364853
-
-Some code borrowed from Gilberto Echeverria
-gilecheverria@yahoo.com
-*/
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <omp.h>
-#include "string_functions.h"
-
-#include <sys/time.h>
-struct timeval start, end;
-
-#define LINE_SIZE 500 // Max line size of source sample file
-
-void free_matrix(int **, int);
-int ** init_matrix(int, int);
-void free_dimensions(int *, int *);
-void read_size(int *, int *, FILE *);
-void read_content(int *, int *, FILE *, int **);
-void generate_pgm(int **, int, int, int);
-void copy_matrix(int **, int **, int, int);
+#include "main.h"
 
 int main(int argc, char const *argv[]) {
 
@@ -143,34 +116,6 @@ void free_matrix(int ** matrix, int rows) {
     free(matrix[i]);
   }
   free(matrix);
-}
-
-/*
-Read the size of the file indicated in the header
-*/
-void read_size(int * columns, int * rows, FILE * file_pointer) {
-  char line[LINE_SIZE];
-  int temp_columns;
-  int temp_rows;
-
-  read_line(line, LINE_SIZE, file_pointer);
-  sscanf(line, "%d %d", &temp_columns, &temp_rows);
-
-  *columns = temp_columns;
-  *rows = temp_rows;
-}
-
-/*
-– Function to read the context of a txt initial state file and store it on a matrix –
-*/
-void read_content(int * columns, int * rows, FILE * file_pointer, int ** matrix) {
-  int temp_int;
-  for (int i = 0; i < *rows; i++) {
-    for (int j = 0; j < *columns; j++) {
-      fscanf(file_pointer, "%d", &temp_int);
-      matrix[j][i] = temp_int;
-    }
-  }
 }
 
 /*
