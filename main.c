@@ -1,4 +1,5 @@
 #include "main.h"
+#include "gifenc.h" // GIF library by lecram (https://github.com/lecram/gifenc)
 
 int main(int argc, char const *argv[]) {
 
@@ -9,10 +10,14 @@ int main(int argc, char const *argv[]) {
   int iterations;
   int **matrix;
   int **temp_matrix;
+
+  bool use_pgm = false;
+
   FILE *file_pointer;
+  GIF *gif; // GIF file pointer
 
   // Check we have correct number of arguments
-  if (argc != 3) {
+  if (argc < 3) {
     printf("Include initial state file path and number of iterations\n");
     exit(1);
   }
@@ -22,6 +27,11 @@ int main(int argc, char const *argv[]) {
   if (file_pointer == NULL) {
     printf("Error opening file '%s'\n", argv[1]);
     exit(1);
+  }
+
+  // Check if we have pgm flag
+  if (argc == 4 && strncmp("-pgm", argv[3], 4) == 0) {
+    use_pgm = true;
   }
 
   // Get iterations
@@ -38,7 +48,21 @@ int main(int argc, char const *argv[]) {
   read_content(columns, rows, file_pointer, matrix);
 
   // Generate image of initial state
-  generate_pgm(matrix, 0, *columns, *rows);
+  if (use_pgm) {
+    generate_pgm(matrix, 0, *columns, *rows);
+  } else {
+    // If we dont have a pgm flag create a GIF
+    gif = new_gif(
+        "biography.gif",  /* file name */
+        *columns, *rows,           /* canvas size */
+        (uint8_t []) {  /* palette */
+          0x00, 0x00, 0x00,   /* entry 0: black */
+          0xFF, 0xFF, 0xFF,   /* entry 1: white */
+        },
+        1,              /* palette depth == log2(# of colors) */
+        0               /* infinite loop */
+    );
+  }
 
   int count = 0;
   while (count < iterations) {
@@ -68,9 +92,23 @@ int main(int argc, char const *argv[]) {
     }
 
     /* Snap matrix state in a file */
-    generate_pgm(temp_matrix, count, *columns, *rows); // This can't be optimized in parallelism, writing the files is what slows down the programm, diabling it we can see the true difference between parallelism and normal
+    if (use_pgm) {
+      generate_pgm(temp_matrix, count, *columns, *rows); // This can't be optimized in parallelism, writing the files is what slows down the programm, diabling it we can see the true difference between parallelism and normal
+    } else {
+      // GIF creation is way more faster than PGM
+      for (int j = 0; j < (*columns)*(*rows); j++) {
+        gif->frame[j] = (uint8_t)temp_matrix[j%(*columns)][j/(*columns)];
+      }
+      add_frame(gif, 10);
+    }
+
     /* Set the new state from temp_matrix to matrix */
     copy_matrix(temp_matrix, matrix, *columns, *rows);
+  }
+
+  // If we're not using pgm close the gif
+  if (!use_pgm) {
+    close_gif(gif);
   }
 
   /* Free the matrix */
@@ -81,7 +119,7 @@ int main(int argc, char const *argv[]) {
   // Print the time of program end
   gettimeofday(&end, NULL);
   double delta = difftime(end.tv_sec, start.tv_sec) + ((double)end.tv_usec - (double)start.tv_usec) / 1000000.0;
-  printf("Finished in : %f\n",delta);
+  printf("Finished in: %f\n",delta);
 
   return 0;
 }

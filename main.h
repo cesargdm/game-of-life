@@ -12,6 +12,8 @@ gilecheverria@yahoo.com
 #include <stdlib.h>
 #include <stdio.h>
 #include <omp.h>
+#include <string.h>
+#include <stdbool.h>
 #include "string_functions.h"
 
 #include <sys/time.h>
