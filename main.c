@@ -10,12 +10,14 @@ gilecheverria@yahoo.com
 */
 
 #include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
-#include "string_functions.h"
 #include <omp.h>
+#include "string_functions.h"
 
-#define LINE_SIZE 500
+#include <sys/time.h>
+struct timeval start, end;
+
+#define LINE_SIZE 500 // Max line size of source sample file
 
 void free_matrix(int **, int);
 int ** init_matrix(int, int);
@@ -23,33 +25,18 @@ void free_dimensions(int *, int *);
 void read_size(int *, int *, FILE *);
 void read_content(int *, int *, FILE *, int **);
 void generate_pgm(int **, int, int, int);
-
-void copy_matrix(int ** origin_matrix, int ** dest_matrix, int rows, int columns) {
-  for (int x = 0; x < rows; x++) {
-    for (int y = 0; y < columns; y++) {
-      dest_matrix[x][y] = origin_matrix[x][y];
-    }
-  }
-}
+void copy_matrix(int **, int **, int, int);
 
 int main(int argc, char const *argv[]) {
+
+  gettimeofday(&start, NULL); // Get the time of start of the program
+
   int *columns = malloc(sizeof(int));
   int *rows = malloc(sizeof(int));
   int iterations;
   int **matrix;
   int **temp_matrix;
   FILE *file_pointer;
-
-  /*
-  #pragma omp parallel default(none), private(i), shared(a, b) {
-    #pragma omp for
-    for (i=0; i<SIZE; i++) {
-        a[i] = i+1 * 1;
-        b[i] = i+1 * 2;
-        printf("%d  [%d]  [%d]\n", i, a[i], b[i]);
-    }
-  }
-  */
 
   // Check we have correct number of arguments
   if (argc != 3) {
@@ -60,11 +47,11 @@ int main(int argc, char const *argv[]) {
   // Open the file
   file_pointer = fopen(argv[1], "r");
   if (file_pointer == NULL) {
-    printf("Error opening file %s\n", argv[1]);
+    printf("Error opening file '%s'\n", argv[1]);
     exit(1);
   }
 
-  // Get iearations
+  // Get iterations
   iterations = atoi(argv[2]);
 
   // Get number of rows and stuff
@@ -73,15 +60,18 @@ int main(int argc, char const *argv[]) {
   /* Initialize the matrix */
   matrix = init_matrix(*columns, *rows);
   temp_matrix = init_matrix(*columns, *rows);
+
   // Set the content of the file to the matrix
   read_content(columns, rows, file_pointer, matrix);
 
+  // Generate image of initial state
   generate_pgm(matrix, 0, *columns, *rows);
 
   int count = 0;
   while (count < iterations) {
     count++;
-    /* Calculations */
+    /* Calculations in parallel */
+    #pragma omp parallel for collapse(2) shared(temp_matrix,matrix)
     for (int x = 0; x < *rows; x++) {
       for (int y = 0; y < *columns; y++) {
         int neighbours = 0;
@@ -103,8 +93,10 @@ int main(int argc, char const *argv[]) {
         if (neighbours == 3) temp_matrix[x][y] = 1; // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction
       }
     }
+
     /* Snap matrix state in a file */
-    generate_pgm(temp_matrix, count, *columns, *rows);
+    generate_pgm(temp_matrix, count, *columns, *rows); // This can't be optimized in parallelism, writing the files is what slows down the programm, diabling it we can see the true difference between parallelism and normal
+    /* Set the new state from temp_matrix to matrix */
     copy_matrix(temp_matrix, matrix, *columns, *rows);
   }
 
@@ -112,6 +104,11 @@ int main(int argc, char const *argv[]) {
   free_matrix(matrix, *rows);
   free_matrix(temp_matrix, *rows);
   free_dimensions(columns, rows);
+
+  // Print the time of program end
+  gettimeofday(&end, NULL);
+  double delta = difftime(end.tv_sec, start.tv_sec) + ((double)end.tv_usec - (double)start.tv_usec) / 1000000.0;
+  printf("Finished in : %f\n",delta);
 
   return 0;
 }
@@ -123,7 +120,6 @@ void free_dimensions(int * columns, int * rows) {
   free(columns);
   free(rows);
 }
-
 
 /*
 Init the matrix allocating memory with the values of the file
@@ -178,6 +174,18 @@ void read_content(int * columns, int * rows, FILE * file_pointer, int ** matrix)
 }
 
 /*
+– Function to copy the context of one matrix to the other –
+*/
+void copy_matrix(int ** origin_matrix, int ** dest_matrix, int rows, int columns) {
+  #pragma omp parallel for collapse(2) shared(origin_matrix,dest_matrix)
+  for (int x = 0; x < rows; x++) {
+    for (int y = 0; y < columns; y++) {
+      dest_matrix[x][y] = origin_matrix[x][y];
+    }
+  }
+}
+
+/*
 – Function to generate a pgm file from matrix –
 The files are stored in ./build
 Recieves the matrix, numer of iteration, number of columns and rows of matrix
@@ -189,10 +197,8 @@ void generate_pgm(int ** matrix, int iteration, int columns, int rows) {
   FILE *fp;
   fp = fopen(filename, "w");
 
-  fputs("P2\n", fp);
-  fprintf(fp, "# GAME OF LIFE - ITERATION %d...\n", iteration);
-  fprintf(fp, "%d %d\n", columns, rows);
-  fputs("1\n", fp);
+  fprintf(fp, "P2\n# GAME OF LIFE - ITERATION; %d\n", iteration);
+  fprintf(fp, "%d %d\n1\n", columns, rows);
 
   for (int i = 0; i < (rows); i++) {
     for (int j = 0; j < (columns); j++) {
@@ -200,6 +206,5 @@ void generate_pgm(int ** matrix, int iteration, int columns, int rows) {
     }
     fputs("\n", fp);
   }
-
   fclose(fp);
 }
