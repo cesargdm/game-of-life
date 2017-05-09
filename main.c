@@ -1,55 +1,27 @@
 /*
+GAME OF LIFE
+
 César Guadarrama Cantú
+cesargdm@icloud.com
 A01364853
 
+Some code borrowed from Gilberto Echeverria
+gilecheverria@yahoo.com
 */
 
 #include <stdlib.h>
 #include <stdio.h>
 #include "string_functions.h"
+#include <omp.h>
 
 #define LINE_SIZE 500
-
-// Macro to matrix size
-#define MATRIX_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
 void free_matrix(int **, int);
 int ** init_matrix(int, int);
 void free_dimensions(int *, int *);
 void read_size(int *, int *, FILE *);
-
-void generate_pgm(int ** matrix, int iteration, int columns, int rows) {
-
-  char filename[50];
-  sprintf(filename, "./build/state-%d.pgm", iteration);
-  // printf("FIlENAME %s\n", filename);
-
-  FILE *fp;
-  fp = fopen(filename, "w");
-
-  fprintf(fp, "# GAME OF LIFE - ITERATION %d...\n", iteration);
-  fputs("P2\n", fp);
-  fprintf(fp, "%d %d\n", columns, rows);
-
-  for (int i = 0; i < *rows; i++) {
-    for (int j = 0; j < *columns; j++) {
-      fputs("%d", matrix[j][i]);
-    }
-    fputs("\n");
-  }
-
-  fclose(fp);
-}
-
-void read_content(int * columns, int * rows, FILE * file_pointer, int ** matrix) {
-  int temp_int;
-  for (int i = 0; i < *rows; i++) {
-    for (int j = 0; j < *columns; j++) {
-      fscanf(file_pointer, "%d", &temp_int);
-      matrix[j][i] = temp_int;
-    }
-  }
-}
+void read_content(int *, int *, FILE *, int **);
+void generate_pgm(int **, int, int, int);
 
 int main(int argc, char const *argv[]) {
   int *columns = malloc(sizeof(int));
@@ -57,6 +29,17 @@ int main(int argc, char const *argv[]) {
   int iterations;
   int **matrix;
   FILE *file_pointer;
+
+  /*
+  #pragma omp parallel default(none), private(i), shared(a, b) {
+    #pragma omp for
+    for (i=0; i<SIZE; i++) {
+        a[i] = i+1 * 1;
+        b[i] = i+1 * 2;
+        printf("%d  [%d]  [%d]\n", i, a[i], b[i]);
+    }
+  }
+  */
 
   // Check we have correct number of arguments
   if (argc != 3) {
@@ -74,8 +57,6 @@ int main(int argc, char const *argv[]) {
   // Get iearations
   iterations = atoi(argv[2]);
 
-  /* Read the file */
-
   // Get number of rows and stuff
   read_size(columns, rows, file_pointer);
 
@@ -85,6 +66,14 @@ int main(int argc, char const *argv[]) {
   read_content(columns, rows, file_pointer, matrix);
 
   /* Start parallel calculations */
+
+  /*
+
+  */
+
+  // for columns
+    // for rows
+      //matrix[i][j] = 0 || 1 if matrix[i+1][j+1] == 0 && if matrix[i][j+1] == 0
 
   /* Snap matrix state in a file */
   generate_pgm(matrix, 0, *columns, *rows);
@@ -142,4 +131,44 @@ void read_size(int * columns, int * rows, FILE * file_pointer) {
 
   *columns = temp_columns;
   *rows = temp_rows;
+}
+
+/*
+– Function to read the context of a txt initial state file and store it on a matrix –
+*/
+void read_content(int * columns, int * rows, FILE * file_pointer, int ** matrix) {
+  int temp_int;
+  for (int i = 0; i < *rows; i++) {
+    for (int j = 0; j < *columns; j++) {
+      fscanf(file_pointer, "%d", &temp_int);
+      matrix[j][i] = temp_int;
+    }
+  }
+}
+
+/*
+– Function to generate a pgm file from matrix –
+The files are stored in ./build
+Recieves the matrix, numer of iteration, number of columns and rows of matrix
+*/
+void generate_pgm(int ** matrix, int iteration, int columns, int rows) {
+  char filename[50];
+  sprintf(filename, "./build/state-%d.pgm", iteration);
+
+  FILE *fp;
+  fp = fopen(filename, "w");
+
+  fputs("P2\n", fp);
+  fprintf(fp, "# GAME OF LIFE - ITERATION %d...\n", iteration);
+  fprintf(fp, "%d %d\n", columns, rows);
+  fputs("1\n", fp);
+
+  for (int i = 0; i < (rows); i++) {
+    for (int j = 0; j < (columns); j++) {
+      fprintf(fp, "%d ", matrix[j][i]);
+    }
+    fputs("\n", fp);
+  }
+
+  fclose(fp);
 }
