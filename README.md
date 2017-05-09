@@ -5,7 +5,7 @@
 
 Generated GIF, using samples/bichitos.txt file, a 500x500 initial state
 
-![Game of Life](http://i.imgur.com/ZJs1SvP.gif)
+![Game of Life](http://i.imgur.com/bEeG5ph.gif)
 
 ## Description
 
