@@ -13,9 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Max line size of source sample file
+#define LINE_SIZE 500
+
 // Read a string using fgets, and remove the trailing '\n'
 size_t read_line(char * string, int size, FILE * file_ptr);
-// Get rid of the newline in the input buffer
-void clearBufferEnter();
+// Read the size of the sample file header
+void read_size(int *, int *, FILE *);
+// Read the content of the sample file
+void read_content(int *, int *, FILE *, int **);
 
 #endif
