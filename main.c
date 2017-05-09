@@ -110,6 +110,7 @@ int main(int argc, char const *argv[]) {
 
   /* Free the matrix */
   free_matrix(matrix, *rows);
+  free_matrix(temp_matrix, *rows);
   free_dimensions(columns, rows);
 
   return 0;
