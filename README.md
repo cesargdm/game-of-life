@@ -23,4 +23,5 @@ Executable, initial state text file and number of iterations
 ## LICENSE
 MIT &copy; César Guadarrama
 &copy; Gilberto Echeverría
+
 GIF Encoder &copy; lecram
