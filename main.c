@@ -10,6 +10,7 @@ gilecheverria@yahoo.com
 */
 
 #include <stdlib.h>
+#include <unistd.h>
 #include <stdio.h>
 #include "string_functions.h"
 #include <omp.h>
@@ -23,11 +24,20 @@ void read_size(int *, int *, FILE *);
 void read_content(int *, int *, FILE *, int **);
 void generate_pgm(int **, int, int, int);
 
+void copy_matrix(int ** origin_matrix, int ** dest_matrix, int rows, int columns) {
+  for (int x = 0; x < rows; x++) {
+    for (int y = 0; y < columns; y++) {
+      dest_matrix[x][y] = origin_matrix[x][y];
+    }
+  }
+}
+
 int main(int argc, char const *argv[]) {
   int *columns = malloc(sizeof(int));
   int *rows = malloc(sizeof(int));
   int iterations;
   int **matrix;
+  int **temp_matrix;
   FILE *file_pointer;
 
   /*
@@ -62,21 +72,41 @@ int main(int argc, char const *argv[]) {
 
   /* Initialize the matrix */
   matrix = init_matrix(*columns, *rows);
+  temp_matrix = init_matrix(*columns, *rows);
   // Set the content of the file to the matrix
   read_content(columns, rows, file_pointer, matrix);
 
-  /* Start parallel calculations */
-
-  /*
-
-  */
-
-  // for columns
-    // for rows
-      //matrix[i][j] = 0 || 1 if matrix[i+1][j+1] == 0 && if matrix[i][j+1] == 0
-
-  /* Snap matrix state in a file */
   generate_pgm(matrix, 0, *columns, *rows);
+
+  int count = 0;
+  while (count < iterations) {
+    count++;
+    /* Calculations */
+    for (int x = 0; x < *rows; x++) {
+      for (int y = 0; y < *columns; y++) {
+        int neighbours = 0;
+        if (x > 0) {
+          neighbours+= matrix[x-1][y];
+          if (y > 0) neighbours+= matrix[x-1][y-1];
+          if (y < *(rows)-1) neighbours+= matrix[x-1][y+1];
+        }
+        if (y > 0) neighbours+= matrix[x][y-1];
+        if (x < *(rows)-1) {
+          neighbours+= matrix[x+1][y];
+          if (y < *(rows)-1) neighbours+= matrix[x+1][y+1];
+          if (y > 0) neighbours+= matrix[x+1][y-1];
+        }
+        if (y < *(rows)-1) neighbours+= matrix[x][y+1];
+        if (neighbours < 2) temp_matrix[x][y] = 0; // Any live cell with fewer than two live neighbours dies, as if caused by underpopulation
+        if (matrix[x][y] == 1 && neighbours == 2 || matrix[x][y] == 1 && neighbours == 3) temp_matrix[x][y] = 1; // Any live cell with two or three live neighbours lives on to the next generation
+        if (neighbours > 3) temp_matrix[x][y] = 0; // Any live cell with more than three live neighbours dies, as if by overpopulation
+        if (neighbours == 3) temp_matrix[x][y] = 1; // Any dead cell with exactly three live neighbours becomes a live cell, as if by reproduction
+      }
+    }
+    /* Snap matrix state in a file */
+    generate_pgm(temp_matrix, count, *columns, *rows);
+    copy_matrix(temp_matrix, matrix, *columns, *rows);
+  }
 
   /* Free the matrix */
   free_matrix(matrix, *rows);

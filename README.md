@@ -21,6 +21,7 @@ OPEN MP
 > gcc-7 main.c string_functions.c -o life
 
 **Run**
+Executable, initial state text file and number of iterations
 > life ./sample.txt 5
 
 ## LICENSE
