@@ -72,6 +72,7 @@ int main(int argc, char const *argv[]) {
     for (int x = 0; x < *rows; x++) {
       for (int y = 0; y < *columns; y++) {
         int neighbours = 0;
+        // Calculate the number of neighbours
         if (x > 0) {
           neighbours+= matrix[x-1][y];
           if (y > 0) neighbours+= matrix[x-1][y-1];
@@ -111,7 +112,7 @@ int main(int argc, char const *argv[]) {
     close_gif(gif);
   }
 
-  /* Free the matrix */
+  /* Free the matrixes and dimensions */
   free_matrix(matrix, *rows);
   free_matrix(temp_matrix, *rows);
   free_dimensions(columns, rows);
